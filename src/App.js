@@ -10,7 +10,6 @@ class App extends Component {
     channelContractAddress: '',
     paymentAmount: '',
     contractBalance: '',
-    signedMessage: '',
     verifyMessage: ''
   }
 
@@ -21,9 +20,6 @@ class App extends Component {
     } else {
       alert('no metamask')
     }
-
-    fetch('https://tranquil-headland-61722.herokuapp.com/https://beta.popchest.com')
-    .then(data => console.log(data))
   }
 
   fetchInitialChannelAmount(e) {
