@@ -1,14 +1,22 @@
 import React, { Component } from 'react';
 import Web3 from 'web3';
-
 import contractInterface from './interfaces/UnidirectionalPaymentChannelInterface';
+
+// import components
+import Header from './components/Header/Header';
+import Overlay from './components/Overlay/Overlay';
+import ChannelForm from './components/ChannelForm/ChannelForm';
+import ChannelItem from './components/ChannelItem/ChannelItem';
+
+// import styles
 import './App.css';
 
-// rinkeby network
-const contractAddress = '0x4b5614a05fe4a1d212d2d66573909342e5648c1c'
+// init global variables
 let web3;
 let channelContract;
+const contractAddress = '0x4b5614a05fe4a1d212d2d66573909342e5648c1c';
 
+// define default state
 const initialState = {
   address: '',
   openPaymentRecipient: '',
@@ -26,101 +34,118 @@ class App extends Component {
     this.initWeb3();
   }
 
-  initWeb3() {
+  initWeb3 = () => {
+    // check for web3 provider, initialize web3
     if (typeof window.web3 !== 'undefined') {
       web3 = new Web3(window.web3.currentProvider);
       window.web3 = web3;
-      return this.loadContractInterface();
+
+      this.handleAccountUpdate();
+      this.loadContractInterface();
     } else {
-      alert('no web3')
+      // oh no, web3 not found
+      alert(
+        `
+        Please download metamask extension and sign-in
+        to continue.
+        `
+      );
     }
   }
 
-  loadContractInterface() {
-    channelContract = new web3.eth.Contract(
-      contractInterface,
-      contractAddress
-    );
-
-    return this.setAccount();
+  loadContractInterface = () => {
+    // init contract interface
+    channelContract = new web3.eth.Contract(contractInterface, contractAddress);
+    this.setAccount();
   }
 
-  async setAccount() {
-    const accounts = await web3.eth.getAccounts();
-    if (!accounts[0]) return;
+  handleAccountUpdate = () => {
+    // listen for account changes
+    web3.currentProvider.publicConfigStore
+      .on('update', args => this.refreshAccount(args));
+  }
 
+
+  setAccount = async () => {
+    // get accounts list from web3
+    const accounts = await web3.eth.getAccounts();
+    // if no accounts found => stop
+    if (!accounts[0]) return;
+    // set the active account
     const address = accounts[0].toLowerCase();
 
+    // update state with new account
+    // get user channels from contract
     this.setState({ address }, () => {
       this.getSenderChannels();
       this.getRecipientChannels();
-
-      web3.currentProvider.publicConfigStore
-        .on('update', args => this.refreshAccount(args));
     })
   }
 
-  refreshAccount({ selectedAddress }) {
+  refreshAccount = ({ selectedAddress }) => {
     const { address } = this.state;
-
+    // if address is current => stop
     if (selectedAddress === address) return;
 
-    const state = Object.assign({}, initialState);
-    this.setState(state, () => this.setAccount());
+    // if address has updated, reset state and account
+    const newState = Object.assign({}, initialState);
+    this.setState(newState, () => this.setAccount());
   }
 
-  async getSenderChannels() {
+  getSenderChannels = async () => {
+    const contractChannels = await this.getContractChannels(
+      // sender channel count
+      channelContract.methods.senderChannelIndex,
+      // sender channel indexes, point to main channel mapping
+      channelContract.methods.senderChannels,
+    );
+
+    this.setState({ senderChannels: contractChannels })
+  }
+
+  getRecipientChannels = async () => {
+    const contractChannels = await this.getContractChannels(
+      // recipient channel count
+      channelContract.methods.recipientChannelIndex,
+      // recipient channel indexes, point to main channel mapping
+      channelContract.methods.recipientChannels,
+    );
+
+    this.setState({ recipientChannels: contractChannels })
+  }
+
+  getContractChannels = async (getChannelCount, getChannelIndex) => {
     const { address } = this.state;
+    const { channels } = channelContract.methods;
+    const contractChannels = []
 
-    const channelCount = await channelContract.methods
-      .senderChannelIndex(address).call()
+    // get channel count for sender/recipient
+    const channelCount = await getChannelCount(address).call();
+    if (channelCount < 1) return [];
 
-    if (channelCount < 1) return;
-
-    // fetch channel data from contract
-    const senderChannels = []
     for (let i = 0; i < channelCount; i++) {
-      let channelIndex = await channelContract.methods
-        .senderChannels(address, i).call()
-
-      let channel = await channelContract.methods
-        .channels(channelIndex).call()
-
-      senderChannels.push(channel)
+      // get channel indexes from sender/recipient mapping
+      let channelIndex = await getChannelIndex(address, i).call();
+      // indexes point to main channel map
+      let channel = await channels(channelIndex).call();
+      contractChannels.push(channel)
     }
-
-    this.setState({ senderChannels })
+    return contractChannels;
   }
 
-  async getRecipientChannels() {
-    const { address } = this.state;
-    const channelCount = await channelContract.methods
-      .recipientChannelIndex(address).call()
+  openChannel = async () => {
+    const {
+      openPaymentRecipient,
+      openPaymentAmount,
+      address
+    } = this.state;
 
-    if (channelCount < 1) return;
-
-    const recipientChannels = []
-    for (let i = 0; i < channelCount; i++) {
-      let channelIndex = await channelContract.methods
-        .recipientChannels(address, i).call()
-
-      // KLUDGE => use pointers inside contract
-      let channel = await channelContract.methods
-        .channels(channelIndex).call()
-
-      recipientChannels.push(channel)
-    }
-
-    this.setState({ recipientChannels })
-  }
-
-  async openChannel(e) {
-    e.preventDefault();
-    const { openPaymentRecipient, openPaymentAmount, address } = this.state;
+    // convert amount to units eth
     const value = web3.utils.toWei(openPaymentAmount, 'ether');
-
+    // set ui status 'busy' for blockchain waiting entertainment
     this.setState({ status: 'busy' });
 
+    // call openChannel contract method
     channelContract.methods
       .openChannel(openPaymentRecipient)
       .send({ from: address, value })
@@ -130,18 +155,20 @@ class App extends Component {
       });
   }
 
-  async initPayment(channelId) {
+  initPayment = async channelId => {
     const { paymentAmountEth, address } = this.state;
     const amount = web3.utils.toWei(paymentAmountEth, 'ether');
-    const previousChannelSpend = this.getPreviousChannelSpend(channelId)
 
-    const channelSpend = (
-      parseInt(amount) + parseInt(previousChannelSpend)
-    ).toString();
-
+    // get previous spend balance
+    const previousChannelSpend = this.getPreviousChannelSpend(channelId);
+    // add current pay amount and previousSpend
+    const channelSpend = (parseInt(amount) + parseInt(previousChannelSpend)).toString();
+    // hash a message with updated channelSpend and channelId
     const message = this.constructPaymentMessage(channelSpend, channelId);
+    // sign the hashed message with metamask wallet
     const signature = await this.signPaymentMessage(message);
 
+    // construct payment entry for localStorage
     const paymentEntry = {
       channelId,
       channelSpend,
@@ -152,62 +179,67 @@ class App extends Component {
     this.storePayment(paymentEntry)
   }
 
-  constructPaymentMessage(channelSpend, channelId) {
-    return web3.utils.soliditySha3(
+  constructPaymentMessage = (channelSpend, channelId) => (
+    // hash channelSpend and channelId
+    web3.utils.soliditySha3(
       { t: 'uint256', v: channelSpend },
       { t: 'uint256', v: channelId },
     )
-  }
+  )
 
-  async signPaymentMessage(message) {
+  signPaymentMessage = async message => {
     const { address } = this.state;
+    // sign the message hash
     const signedMessage = await web3.eth.personal.sign(message, address);
     return signedMessage;
   }
 
-  getPreviousChannelSpend(channelId) {
-    if (!localStorage.getItem('payments')) {
-      localStorage.setItem('payments', JSON.stringify({}))
-      return 0;
-    }
+  getPreviousChannelSpend = channelId => {
+    // if no payment record found => 0
+    if (!localStorage.getItem('payments')) return '0';
 
     const storedPayments = JSON.parse(localStorage.getItem('payments'));
-
-    const previousSpend = storedPayments[channelId] ?
-      storedPayments[channelId].channelSpend : 0;
-
+    // get channel record from stored payment data
+    const previousSpend = storedPayments[channelId] ? storedPayments[channelId].channelSpend : 0;
     return previousSpend.toString();
   }
 
-  storePayment(paymentEntry) {
-    // update payment object from storage
+  storePayment = paymentEntry => {
+    // prep localStorage payments object
     const paymentStorage = localStorage.getItem('payments') ?
       Object.assign({}, JSON.parse(localStorage.getItem('payments'))) : {};
 
+    // add new entry to channel
     paymentStorage[paymentEntry.channelId] = paymentEntry;
     localStorage.setItem('payments', JSON.stringify(paymentStorage));
     this.getSenderChannels();
   }
 
-  async verifySignature(channelId) {
+  verifySignature = async channelId => {
+    // get payment record from localStorage
     const storedPayment = JSON.parse(localStorage.getItem('payments'))[channelId];
     const { channelSpend, signature, spenderAddress } = storedPayment;
 
+    // recreate the expected message hash
     const expectedMessage = this.constructPaymentMessage(channelSpend, channelId);
+    // recover signer's address from expected message hash and the recorded signature
     const signingAddress = await web3.eth.personal.ecRecover(expectedMessage, signature);
 
-    if (signingAddress.toLowerCase() === spenderAddress.toLowerCase())
+    // compare recovered address with expected signer's address
+    if (signingAddress.toLowerCase() === spenderAddress.toLowerCase()) {
       return alert('payment signature is valid. Signed by: ' + signingAddress + ' for ' + channelSpend);
-
-    alert('payment signature invalid')
+    } else {
+      alert('payment signature invalid');
+    }
   }
 
-  async closeChannel(channelId) {
+  closeChannel = async channelId => {
     const { address } = this.state;
-
+    // get payment record
     const paymentStore = localStorage.getItem('payments') ?
       Object.assign({}, JSON.parse(localStorage.getItem('payments'))) : {};
 
+    // no channel data => stop
     if (!paymentStore[channelId]) return;
 
     const {
@@ -216,8 +248,10 @@ class App extends Component {
       spenderAddress
     } = paymentStore[channelId];
 
+    // set ui state to busy while we wait for on-chain tx
     this.setState({ status: 'busy' });
 
+    // execute closing function
     channelContract.methods
       .closeChannel(channelSpend, channelId, signature, spenderAddress)
       .send({ from: address })
@@ -228,6 +262,13 @@ class App extends Component {
           this.getRecipientChannels();
         }
       });
+  }
+
+  handleFormChange = (field, value) => {
+    // update state with form data
+    const newState = {};
+    newState[field] = value;
+    this.setState(newState);
   }
 
   render() {
@@ -243,56 +284,16 @@ class App extends Component {
 
     return(
       <div className="App">
-
-        {
-          !address &&
-          <div className="App__overlay">
-            <h3>Please sign into MetaMask</h3>
-            <h1>psss.. test on rinkeby network</h1>
-          </div>
-        }
-
-        {
-          status === 'busy' &&
-          <div className="App__overlay">
-            <h3>Blockchaining, please wait..</h3>
-            <h1>this is why we need channels XD</h1>
-            <h3>Please confirm with your metamask wallet</h3>
-          </div>
-        }
-
-        <div className="App__header">
-          <h1>++</h1>
-          <p>signed in: { address }</p>
-        </div>
-
+        <Header address={address} />
         <div className="App__container">
           <h4>Open payment channel</h4>
-          <form>
-            <label>
-              Enter Channel Recipient
-              <input
-                type="text"
-                placeholder="recipient address 0x.."
-                value={openPaymentRecipient}
-                onChange={e => this.setState({ openPaymentRecipient: e.target.value })} />
-            </label>
+          <ChannelForm
+            openPaymentRecipient={openPaymentRecipient}
+            openPaymentAmount={openPaymentAmount}
+            handleFormChange={this.handleFormChange}
+            openChannel={this.openChannel}
+          />
 
-            <label>
-              Enter Channel Value
-              <input
-                type="text"
-                placeholder="amount in ETH"
-                value={openPaymentAmount}
-                onChange={e => this.setState({ openPaymentAmount: e.target.value })} />
-            </label>
-
-            <button className="App__button--primary" onClick={e => this.openChannel(e)}>
-              Open Channel
-            </button>
-          </form>
-
-          <br/>
           <hr/>
 
           <h4>Sender channels</h4>
@@ -307,106 +308,61 @@ class App extends Component {
             </label>
           </form>
 
-          <br/>
-
           {
-            senderChannels.length > 0 &&
+            senderChannels.length > 0 ?
             <div>
               {
                 senderChannels.map(channel => (
-                  <div key={channel.id}>
-                    { web3.utils.fromWei(this.getPreviousChannelSpend(channel.id).toString()) } &nbsp; | &nbsp;
-                    { web3.utils.fromWei(channel.deposit.toString(), 'ether') } ETH &nbsp;
-                    {channel.recipient} &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-
-                    {
-                      channel.status === 'closed' &&
-                      <span>closed</span>
-                    }
-
-                    {
-                      channel.status === 'open' &&
-                      <span>
-                        <button
-                          className="App__button--secondary"
-                          onClick={() => this.initPayment(channel.id)}>
-                          pay { paymentAmountEth } ETH
-                        </button>
-                        <button
-                          className="App__button--secondary"
-                          onClick={() => this.verifySignature(channel.id)}
-                          disabled={this.getPreviousChannelSpend(channel.id) === 0}>
-                          verify
-                        </button>
-                      </span>
-                    }
-
-                    <br/><br/>
-
-                  </div>
+                  <ChannelItem
+                    key={channel.id}
+                    userType="sender"
+                    channel={channel}
+                    channelSpend={this.getPreviousChannelSpend(channel.id)}
+                    initPayment={this.initPayment}
+                    verifySignature={this.verifySignature}
+                    paymentAmountEth={paymentAmountEth}
+                  />
                 ))
               }
             </div>
-          }
-          {
-            !senderChannels.length &&
-            <div>
-              -
-            </div>
+            :
+            <div> - </div>
           }
 
-          <br/>
           <hr/>
 
           <h4>Recieving channels</h4>
           {
-            recipientChannels.length > 0 &&
+            recipientChannels.length > 0 ?
             <div>
               {
                 recipientChannels.map(channel => (
-                  <div key={channel.id}>
-                    { web3.utils.fromWei(this.getPreviousChannelSpend(channel.id).toString()) } &nbsp; | &nbsp;
-                    { web3.utils.fromWei(channel.deposit.toString(), 'ether') } ETH &nbsp;
-                    {channel.sender} &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-
-                    {
-                      channel.status === 'closed' &&
-                      <span>closed</span>
-                    }
-
-                    {
-                      channel.status === 'open' &&
-                      <span>
-                        <button
-                          className="App__button--secondary"
-                          onClick={() => this.verifySignature(channel.id)}
-                          disabled={this.getPreviousChannelSpend(channel.id) === 0}>
-                          verify
-                        </button>
-
-                        <button
-                          className="App__button--secondary"
-                          onClick={() => this.closeChannel(channel.id)}
-                          disabled={this.getPreviousChannelSpend(channel.id) === 0}>
-                          close channel
-                        </button>
-                      </span>
-                    }
-
-                    <br/><br/>
-
-                  </div>
+                  <ChannelItem
+                    key={channel.id}
+                    userType="reciever"
+                    channel={channel}
+                    channelSpend={this.getPreviousChannelSpend(channel.id)}
+                    closeChannel={this.closeChannel}
+                    verifySignature={this.verifySignature}
+                  />
                 ))
               }
             </div>
-          }
-          {
-            !recipientChannels.length &&
-            <div>
-              -
-            </div>
+            :
+            <div> - </div>
           }
         </div>
+
+        {
+          !address &&
+          <Overlay display="signin" />
+        }
+
+        {
+          status === 'busy' &&
+          <Overlay display="busy" />
+        }
+
       </div>
     )
   }
