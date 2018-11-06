@@ -1,13 +1,18 @@
+pragma solidity ^0.4.25;
+
 contract UnidirectionalPaymentChannel {
     // track channel id
     uint256 public channelIndex;
+
+    // set status types
+    enum Status { Open, Closed }
 
     struct Channel {
         uint256 id;
         address sender;         // address of payer
         address recipient;      // address of payee
         uint256 deposit;        // initial channel value
-        string  status;         // TODO: enum
+        Status status;
     }
 
     // map of all channels
@@ -35,9 +40,9 @@ contract UnidirectionalPaymentChannel {
                 sender: msg.sender,
                 recipient: _recipient,
                 deposit: msg.value,
-                status: 'open'
+                status: Status.Open
             }
-        );
+        ); // TODO: sender/recipient index
 
         // add channel to channel maps
         channels[channelIndex] = newChannel;
@@ -67,7 +72,7 @@ contract UnidirectionalPaymentChannel {
         // channel status must be open
         require(closingChannel.recipient == msg.sender);
         require(closingChannel.sender == _sender);
-        require(keccak256(closingChannel.status) == keccak256('open'));
+        require(closingChannel.status == Status.Open);
 
         // init local variables
         bytes32 r;
@@ -105,7 +110,7 @@ contract UnidirectionalPaymentChannel {
         closingChannel.sender.transfer(returnAmount);
 
         // update channel status
-        channels[_channelId].status = 'closed';
+        channels[_channelId].status = Status.Closed;
 
         return true;
     }
