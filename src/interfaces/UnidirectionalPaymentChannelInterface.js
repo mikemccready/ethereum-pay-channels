@@ -35,6 +35,48 @@ export default [
 				"type": "address"
 			}
 		],
+		"name": "recipientChannelIndex",
+		"outputs": [
+			{
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [
+			{
+				"name": "",
+				"type": "address"
+			},
+			{
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"name": "recipientChannels",
+		"outputs": [
+			{
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [
+			{
+				"name": "",
+				"type": "address"
+			}
+		],
 		"name": "senderChannelIndex",
 		"outputs": [
 			{
@@ -61,24 +103,8 @@ export default [
 		"name": "senderChannels",
 		"outputs": [
 			{
-				"name": "id",
+				"name": "",
 				"type": "uint256"
-			},
-			{
-				"name": "sender",
-				"type": "address"
-			},
-			{
-				"name": "recipient",
-				"type": "address"
-			},
-			{
-				"name": "deposit",
-				"type": "uint256"
-			},
-			{
-				"name": "status",
-				"type": "string"
 			}
 		],
 		"payable": false,
