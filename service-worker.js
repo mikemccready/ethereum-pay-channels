@@ -14,7 +14,7 @@
 importScripts("https://storage.googleapis.com/workbox-cdn/releases/3.6.2/workbox-sw.js");
 
 importScripts(
-  "/ethereum-pay-channels/precache-manifest.760e9a2bcd666a1d6859ef84ab2681b0.js"
+  "/ethereum-pay-channels/precache-manifest.7c1e9759bb623002fd01a27ed487d83f.js"
 );
 
 workbox.clientsClaim();

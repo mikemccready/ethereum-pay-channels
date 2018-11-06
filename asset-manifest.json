@@ -1,13 +1,13 @@
 {
-  "main.css": "/ethereum-pay-channels/static/css/main.758ac21f.chunk.css",
-  "main.js": "/ethereum-pay-channels/static/js/main.495774fc.chunk.js",
-  "main.js.map": "/ethereum-pay-channels/static/js/main.495774fc.chunk.js.map",
+  "main.css": "/ethereum-pay-channels/static/css/main.92b61300.chunk.css",
+  "main.js": "/ethereum-pay-channels/static/js/main.4235c15b.chunk.js",
+  "main.js.map": "/ethereum-pay-channels/static/js/main.4235c15b.chunk.js.map",
   "static/js/1.493c2b3e.chunk.js": "/ethereum-pay-channels/static/js/1.493c2b3e.chunk.js",
   "static/js/1.493c2b3e.chunk.js.map": "/ethereum-pay-channels/static/js/1.493c2b3e.chunk.js.map",
   "runtime~main.js": "/ethereum-pay-channels/static/js/runtime~main.fc8f4ac5.js",
   "runtime~main.js.map": "/ethereum-pay-channels/static/js/runtime~main.fc8f4ac5.js.map",
-  "static/css/main.758ac21f.chunk.css.map": "/ethereum-pay-channels/static/css/main.758ac21f.chunk.css.map",
+  "static/css/main.92b61300.chunk.css.map": "/ethereum-pay-channels/static/css/main.92b61300.chunk.css.map",
   "index.html": "/ethereum-pay-channels/index.html",
-  "precache-manifest.760e9a2bcd666a1d6859ef84ab2681b0.js": "/ethereum-pay-channels/precache-manifest.760e9a2bcd666a1d6859ef84ab2681b0.js",
+  "precache-manifest.7c1e9759bb623002fd01a27ed487d83f.js": "/ethereum-pay-channels/precache-manifest.7c1e9759bb623002fd01a27ed487d83f.js",
   "service-worker.js": "/ethereum-pay-channels/service-worker.js"
 }
