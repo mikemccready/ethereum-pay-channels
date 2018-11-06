@@ -14,8 +14,12 @@ contract UnidirectionalPaymentChannel {
     mapping(uint256 => Channel) public channels;
 
     // index channels where user is sender
-    mapping(address => Channel[]) public senderChannels;
+    mapping(address => uint256[]) public senderChannels;
     mapping(address => uint256) public senderChannelIndex;
+
+    // index channels where user is recipient
+    mapping(address => uint256[]) public recipientChannels;
+    mapping(address => uint256) public recipientChannelIndex;
 
     // init contract and channelIndex
     constructor() public {
@@ -37,11 +41,13 @@ contract UnidirectionalPaymentChannel {
 
         // add channel to channel maps
         channels[channelIndex] = newChannel;
-        senderChannels[msg.sender].push(newChannel);
+        senderChannels[msg.sender].push(channelIndex);
+        recipientChannels[_recipient].push(channelIndex);
 
         // increment channel indexes
         channelIndex++;
         senderChannelIndex[msg.sender]++;
+        recipientChannelIndex[_recipient]++;
     }
 
     // close payment channel, called by recipient
