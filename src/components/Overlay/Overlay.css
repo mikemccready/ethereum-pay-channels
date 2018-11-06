@@ -1,0 +1,34 @@
+.Overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  width: 100vw;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  background: url("https://thumbs.gfycat.com/WholeFamousHorsechestnutleafminer-size_restricted.gif") center center no-repeat;
+  background-size: cover;
+  /* background-image: url('https://thumbs.gfycat.com/ShabbySparklingAmericanavocet-size_restricted.gif'); */
+  color: white;
+}
+
+.Overlay__pattern {
+  background:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAAECAYAAABP2FU6AAAAEElEQVQYV2NggIL/MAbDfwAMCAH/RdznBgAAAABJRU5ErkJggg==) repeat;
+  width:100%;
+  height:100%;
+  position:fixed;
+  top:0;
+  left:0;
+}
+
+.Overlay__content {
+  z-index: 1;
+  padding: 1.5em;
+}
+
+.Overlay a {
+  color: white;
+}
