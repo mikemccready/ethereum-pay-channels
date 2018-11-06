@@ -1,12 +1,12 @@
 import React, { Component } from 'react';
 import Web3 from 'web3';
-import contractInterface from './interfaces/UnidirectionalPaymentChannelInterface';
+import contractInterface from '../interfaces/UnidirectionalPaymentChannelInterface';
 
 // import components
-import Header from './components/Header/Header';
-import Overlay from './components/Overlay/Overlay';
-import ChannelForm from './components/ChannelForm/ChannelForm';
-import ChannelItem from './components/ChannelItem/ChannelItem';
+import Header from '../components/Header/Header';
+import Overlay from '../components/Overlay/Overlay';
+import ChannelForm from '../components/ChannelForm/ChannelForm';
+import ChannelItem from '../components/ChannelItem/ChannelItem';
 
 // import styles
 import './App.css';
@@ -14,7 +14,7 @@ import './App.css';
 // init global variables
 let web3;
 let channelContract;
-const contractAddress = '0x4b5614a05fe4a1d212d2d66573909342e5648c1c';
+const contractAddress = '0x82293d50e12d580db85d4488f8f3c7f2d5ed8d20';
 
 // define default state
 const initialState = {
