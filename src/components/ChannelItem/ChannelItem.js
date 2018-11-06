@@ -27,12 +27,12 @@ function ChannelItem(props) {
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 
       {
-        channel.status === 'closed' &&
+        channel.status === '1' &&
         <span>closed</span>
       }
 
       {
-        channel.status === 'open' &&
+        channel.status === '0' &&
         <span>
           {
             userType === 'sender' ?
