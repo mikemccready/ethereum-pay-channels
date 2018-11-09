@@ -14,7 +14,7 @@ import './App.css';
 // init global variables
 let web3;
 let channelContract;
-const contractAddress = '0x82293d50e12d580db85d4488f8f3c7f2d5ed8d20';
+const contractAddress = '0x5b75a49bb4c047e311e0a0e06d56fba8de54b280';
 
 // define default state
 const initialState = {
