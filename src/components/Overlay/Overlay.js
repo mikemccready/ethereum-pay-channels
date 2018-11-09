@@ -20,7 +20,7 @@ function Overlay(props) {
                 MetaMask
               </a>
             </h3>
-            <h1>psss.. test on rinkeby network</h1>
+            <h1>psss.. test on ropsten network</h1>
           </div>
         }
 
