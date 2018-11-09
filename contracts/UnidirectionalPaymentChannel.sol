@@ -73,6 +73,7 @@ contract UnidirectionalPaymentChannel {
         require(closingChannel.recipient == msg.sender);
         require(closingChannel.sender == _sender);
         require(closingChannel.status == Status.Open);
+        require(closingChannel.deposit >= _channelSpend);
 
         // init local variables
         bytes32 r;
